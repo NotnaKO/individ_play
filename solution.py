@@ -35,6 +35,9 @@ class Ui_MainWindow(object):
         self.pushButton = QtWidgets.QPushButton(self.formLayoutWidget)
         self.pushButton.setObjectName("pushButton")
         self.formLayout.setWidget(2, QtWidgets.QFormLayout.SpanningRole, self.pushButton)
+        self.pushButton_2 = QtWidgets.QPushButton(self.formLayoutWidget)
+        self.pushButton_2.setObjectName("pushButton_2")
+        self.formLayout.setWidget(3, QtWidgets.QFormLayout.SpanningRole, self.pushButton_2)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 571, 26))
@@ -53,6 +56,7 @@ class Ui_MainWindow(object):
         self.label.setText(_translate("MainWindow", "Слои карты:"))
         self.label_2.setText(_translate("MainWindow", "Поиск объекта:"))
         self.pushButton.setText(_translate("MainWindow", "Искать"))
+        self.pushButton_2.setText(_translate("MainWindow", "Сброс поискового результата"))
 
 
 class MyWidget(QMainWindow, Ui_MainWindow):
