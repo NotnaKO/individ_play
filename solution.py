@@ -94,9 +94,8 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         check(response)
         json_response = response.json()
         point = json_response['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point']['pos']
-        coord1 = list(map(float, point.split()))
-        sp.append(coord1)
-        coord = sp[-1]
+        coord = list(map(float, point.split()))
+        sp.append(coord)
         self.close()
 
 
@@ -144,7 +143,7 @@ def check(response):
 
 def draw():
     global map_file, ch, screen
-    map_request = f"http://static-maps.yandex.ru/1.x/?&pt={','.join(map(str, coord))},pmgrs~{'~'.join(list(map(lambda x: f'{x[0]},{x[1]}', sp)))}&z={z}&l={typ}"
+    map_request = f"http://static-maps.yandex.ru/1.x/?&pt={','.join(map(str, coord))},pmgrs&z={z}&l={typ}"
     response = requests.get(map_request)
     check(response)
     map_file = "map.png"
