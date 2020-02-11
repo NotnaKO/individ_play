@@ -37,11 +37,18 @@ class Ui_MainWindow(object):
 
 
 class MyWidget(QMainWindow, Ui_MainWindow):
-    def __init__(self):
+    def __init__(self, t):
         super().__init__()
         self.setupUi(self)
         self.sp = ['схема', "спутник", "гибрид"]
         self.comboBox.addItems(self.sp)
+        if t == 'map':
+            i = 0
+        elif t == 'sat':
+            i = 1
+        else:
+            i = 2
+        self.comboBox.setCurrentIndex(i)
         self.comboBox.activated[str].connect(self.choice)
         self.show()
 
@@ -85,10 +92,10 @@ class Set(pygame.sprite.Sprite):
         self.rect.x = 600 - self.rect.w
 
 
-def set_map():
+def set_map(t):
     global ch
     app = QApplication(sys.argv)
-    ex = MyWidget()
+    ex = MyWidget(t)
     app.exec_()
     del ex
     ch = True
@@ -153,7 +160,7 @@ while True:
         if event.type == pygame.MOUSEBUTTONDOWN:
             if setts.rect.x <= event.pos[0] <= setts.rect.right:
                 if setts.rect.y <= event.pos[1] <= setts.rect.y + setts.rect.h:
-                    set_map()
+                    set_map(typ)
                     screen = pygame.display.set_mode([600, 450])
         draw()
         all_sprites.draw(screen)
