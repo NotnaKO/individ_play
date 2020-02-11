@@ -154,10 +154,10 @@ def draw():
     ch = False
 
 
-# coord = list(map(float, input().split()))
-# z = int(input())
-coord = [37.948858, 54.180362]
-z = 7
+coord = list(map(float, input().split()))
+z = int(input())
+# coord = [37.948858, 54.180362]
+# z = 7
 sp = [coord[::]]
 step_y = 181.65 / 2 ** (z - 1)
 step_x = 416.26 / 2 ** (z - 1)
