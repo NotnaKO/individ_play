@@ -59,6 +59,33 @@ class Ui_MainWindow(object):
         self.pushButton_2.setText(_translate("MainWindow", "Сброс поискового результата"))
 
 
+class Ui_MainWindow2(object):
+    def setupUi(self, MainWindow):
+        MainWindow.setObjectName("MainWindow")
+        MainWindow.resize(823, 97)
+        self.centralwidget = QtWidgets.QWidget(MainWindow)
+        self.centralwidget.setObjectName("centralwidget")
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(10, 10, 811, 21))
+        self.label.setObjectName("label")
+        MainWindow.setCentralWidget(self.centralwidget)
+        self.menubar = QtWidgets.QMenuBar(MainWindow)
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 823, 26))
+        self.menubar.setObjectName("menubar")
+        MainWindow.setMenuBar(self.menubar)
+        self.statusbar = QtWidgets.QStatusBar(MainWindow)
+        self.statusbar.setObjectName("statusbar")
+        MainWindow.setStatusBar(self.statusbar)
+
+        self.retranslateUi(MainWindow)
+        QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+    def retranslateUi(self, MainWindow):
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.label.setText(_translate("MainWindow", "TextLabel"))
+
+
 class MyWidget(QMainWindow, Ui_MainWindow):
     def __init__(self, t):
         super().__init__()
@@ -98,10 +125,22 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         check(response)
         json_response = response.json()
         point = json_response['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point']['pos']
+        name = json_response['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']["metaDataProperty"][
+            "GeocoderMetaData"][
+            'text']
         coord1 = list(map(float, point.split()))
         sp.append(coord1)
         coord = sp[-1]
+        self.ou = Out(name)
+        self.ou.show()
         self.close()
+
+
+class Out(QMainWindow, Ui_MainWindow2):
+    def __init__(self, text):
+        super().__init__()
+        self.setupUi(self)
+        self.label.setText(text)
 
 
 pygame.init()
@@ -158,10 +197,10 @@ def draw():
     ch = False
 
 
-coord = list(map(float, input().split()))
-z = int(input())
-# coord = [37.948858, 54.180362]
-# z = 7
+# coord = list(map(float, input().split()))
+# z = int(input())
+coord = [37.948858, 54.180362]
+z = 7
 sp = [coord[::]]
 step_y = 181.65 / 2 ** (z - 1)
 step_x = 416.26 / 2 ** (z - 1)
