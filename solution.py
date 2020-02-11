@@ -62,12 +62,15 @@ class Ui_MainWindow(object):
 class Ui_MainWindow2(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(823, 97)
+        MainWindow.resize(823, 163)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(10, 10, 811, 21))
         self.label.setObjectName("label")
+        self.checkBox = QtWidgets.QCheckBox(self.centralwidget)
+        self.checkBox.setGeometry(QtCore.QRect(20, 70, 171, 31))
+        self.checkBox.setObjectName("checkBox")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 823, 26))
@@ -84,6 +87,7 @@ class Ui_MainWindow2(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.label.setText(_translate("MainWindow", "TextLabel"))
+        self.checkBox.setText(_translate("MainWindow", "Почтовый индекс"))
 
 
 class MyWidget(QMainWindow, Ui_MainWindow):
@@ -141,6 +145,12 @@ class Out(QMainWindow, Ui_MainWindow2):
         super().__init__()
         self.setupUi(self)
         self.label.setText(text)
+        self.checkBox.stateChanged.connect(self.ind)
+
+    def ind(self, state):
+        if state == QtCore.Qt.Checked:
+            t = self.label.text()
+            self.label.setText(t + find_ind(t))
 
 
 pygame.init()
@@ -197,10 +207,24 @@ def draw():
     ch = False
 
 
-# coord = list(map(float, input().split()))
-# z = int(input())
-coord = [37.948858, 54.180362]
-z = 7
+def find_ind(text):
+    geo_params = {'apikey': geo_api_key, 'geocode': text, 'format': 'json'}
+    response = requests.get(geo_api_server, params=geo_params)
+    check(response)
+    json_response = response.json()
+    toponim = json_response['response']['GeoObjectCollection']['featureMember'][0]
+    try:
+        spi = toponim["GeoObject"]["metaDataProperty"]["GeocoderMetaData"]["Address"]["postal_code"]
+        return spi
+    except KeyError:
+        print('Ошибка объекта! Проверьте адрес!')
+        sys.exit(2)
+
+
+coord = list(map(float, input().split()))
+z = int(input())
+# coord = [37.948858, 54.180362]
+# z = 7
 sp = [coord[::]]
 step_y = 181.65 / 2 ** (z - 1)
 step_x = 416.26 / 2 ** (z - 1)
