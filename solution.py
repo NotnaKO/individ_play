@@ -3,25 +3,41 @@ import sys
 import random
 import pygame
 import requests
-from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QApplication
-
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(800, 600)
+        MainWindow.resize(571, 493)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.comboBox = QtWidgets.QComboBox(self.centralwidget)
-        self.comboBox.setGeometry(QtCore.QRect(500, 20, 151, 22))
+        self.formLayoutWidget = QtWidgets.QWidget(self.centralwidget)
+        self.formLayoutWidget.setGeometry(QtCore.QRect(90, 70, 441, 351))
+        self.formLayoutWidget.setObjectName("formLayoutWidget")
+        self.formLayout = QtWidgets.QFormLayout(self.formLayoutWidget)
+        self.formLayout.setContentsMargins(0, 0, 0, 0)
+        self.formLayout.setObjectName("formLayout")
+        self.label = QtWidgets.QLabel(self.formLayoutWidget)
+        self.label.setObjectName("label")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.label)
+        self.comboBox = QtWidgets.QComboBox(self.formLayoutWidget)
         self.comboBox.setCurrentText("")
         self.comboBox.setObjectName("comboBox")
+        self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.comboBox)
+        self.lineEdit = QtWidgets.QLineEdit(self.formLayoutWidget)
+        self.lineEdit.setObjectName("lineEdit")
+        self.formLayout.setWidget(1, QtWidgets.QFormLayout.FieldRole, self.lineEdit)
+        self.label_2 = QtWidgets.QLabel(self.formLayoutWidget)
+        self.label_2.setObjectName("label_2")
+        self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.label_2)
+        self.pushButton = QtWidgets.QPushButton(self.formLayoutWidget)
+        self.pushButton.setObjectName("pushButton")
+        self.formLayout.setWidget(2, QtWidgets.QFormLayout.SpanningRole, self.pushButton)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 571, 26))
         self.menubar.setObjectName("menubar")
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
@@ -34,6 +50,9 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
+        self.label.setText(_translate("MainWindow", "Слои карты:"))
+        self.label_2.setText(_translate("MainWindow", "Поиск объекта:"))
+        self.pushButton.setText(_translate("MainWindow", "Искать"))
 
 
 class MyWidget(QMainWindow, Ui_MainWindow):
@@ -50,6 +69,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
             i = 2
         self.comboBox.setCurrentIndex(i)
         self.comboBox.activated[str].connect(self.choice)
+        self.pushButton.clicked.connect(self.search_topo)
         self.show()
 
     def choice(self, text):
@@ -64,6 +84,19 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         if index == 2:
             self.comboBox.setCurrentIndex(2)
             typ = 'sat,skl'
+        self.close()
+
+    def search_topo(self):
+        global coord, ch
+        text = self.lineEdit.text()
+        geo_params = {'apikey': geo_api_key, 'geocode': text, 'format': 'json'}
+        response = requests.get(geo_api_server, params=geo_params)
+        check(response)
+        json_response = response.json()
+        point = json_response['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point']['pos']
+        coord1 = list(map(float, point.split()))
+        sp.append(coord1)
+        coord = sp[-1]
         self.close()
 
 
@@ -101,17 +134,19 @@ def set_map(t):
     ch = True
 
 
-def draw():
-    global map_file, ch, screen
-    map_request = f"http://static-maps.yandex.ru/1.x/?&pt={','.join(map(str, coord))}&z={z}&l={typ}"
-    response = requests.get(map_request)
-
+def check(response):
     if not response:
-        print("Ошибка выполнения запроса:")
-        print(map_request)
+        print("Ошибка выполнения запроса!")
+        print(response.content)
         print("Http статус:", response.status_code, "(", response.reason, ")")
         sys.exit(1)
 
+
+def draw():
+    global map_file, ch, screen
+    map_request = f"http://static-maps.yandex.ru/1.x/?&pt={','.join(map(str, coord))},pmgrs~{'~'.join(list(map(lambda x: f'{x[0]},{x[1]}', sp)))}&z={z}&l={typ}"
+    response = requests.get(map_request)
+    check(response)
     map_file = "map.png"
     with open(map_file, "wb") as file:
         file.write(response.content)
@@ -119,11 +154,19 @@ def draw():
     ch = False
 
 
-coord = list(map(float, input().split()))
-z = int(input())
+# coord = list(map(float, input().split()))
+# z = int(input())
+coord = [37.948858, 54.180362]
+z = 7
+sp = [coord[::]]
 step_y = 181.65 / 2 ** (z - 1)
 step_x = 416.26 / 2 ** (z - 1)
 screen = pygame.display.set_mode([600, 450])
+search_api_server = "https://search-maps.yandex.ru/v1/"
+geo_api_server = 'https://geocode-maps.yandex.ru/1.x/'
+map_api_server = "http://static-maps.yandex.ru/1.x/"
+geo_api_key = "40d1649f-0493-4b70-98ba-98533de7710b"
+search_api_key = 'dda3ddba-c9ea-4ead-9010-f43fbc15c6e3'
 ch = True
 typ = 'map'
 setts = Set()
@@ -132,34 +175,35 @@ while True:
         if event.type == pygame.QUIT:
             os.remove(map_file)
             sys.exit(0)
-        if event.type == pygame.KEYDOWN:
+        elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_PAGEDOWN:
                 z -= 1
                 if z < 0:
                     z = 1
                 ch = True
-            if event.key == pygame.K_PAGEUP:
+            elif event.key == pygame.K_PAGEUP:
                 z += 1
                 if z > 17:
                     z = 17
                 ch = True
-            if event.key == pygame.K_UP and coord[1] + step_y < 90:
+            elif event.key == pygame.K_UP and coord[1] + step_y < 90:
                 coord[1] += step_y
                 ch = True
-            if event.key == pygame.K_DOWN and coord[1] - step_y > -90:
+            elif event.key == pygame.K_DOWN and coord[1] - step_y > -90:
                 coord[1] -= step_y
                 ch = True
-            if event.key == pygame.K_LEFT and coord[0] - step_x > -180:
+            elif event.key == pygame.K_LEFT and coord[0] - step_x > -180:
                 coord[0] -= step_x
                 ch = True
-            if event.key == pygame.K_RIGHT and coord[0] + step_x < 180:
+            elif event.key == pygame.K_RIGHT and coord[0] + step_x < 180:
                 coord[0] += step_x
                 ch = True
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             if setts.rect.x <= event.pos[0] <= setts.rect.right:
                 if setts.rect.y <= event.pos[1] <= setts.rect.y + setts.rect.h:
                     set_map(typ)
                     screen = pygame.display.set_mode([600, 450])
-        draw()
-        all_sprites.draw(screen)
+        if ch:
+            draw()
+            all_sprites.draw(screen)
     pygame.display.flip()
