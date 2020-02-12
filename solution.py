@@ -62,14 +62,14 @@ class Ui_MainWindow(object):
 class Ui_MainWindow2(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(823, 163)
+        MainWindow.resize(823, 348)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(10, 10, 811, 21))
+        self.label.setGeometry(QtCore.QRect(10, 10, 811, 201))
         self.label.setObjectName("label")
         self.checkBox = QtWidgets.QCheckBox(self.centralwidget)
-        self.checkBox.setGeometry(QtCore.QRect(20, 70, 171, 31))
+        self.checkBox.setGeometry(QtCore.QRect(20, 230, 171, 31))
         self.checkBox.setObjectName("checkBox")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -142,18 +142,22 @@ class MyWidget(QMainWindow, Ui_MainWindow):
 
 class Out(QMainWindow, Ui_MainWindow2):
     def __init__(self, text):
+        global lis
         super().__init__()
         self.setupUi(self)
-        self.label.setText(text)
-        self.text = text
+        lis.append(text)
         self.checkBox.stateChanged.connect(self.ind)
+        self.ind(False)
 
     def ind(self, state):
         if state == QtCore.Qt.Checked:
-            t = self.text
-            self.label.setText(t + ", " + find_ind(t))
+            lis2 = []
+            for t in lis:
+                lis2.append(t + ", " + find_ind(t))
+            s = '\n'.join(lis2)
         else:
-            self.label.setText(self.text)
+            s = '\n'.join(lis)
+        self.label.setText(s)
 
 
 pygame.init()
@@ -239,6 +243,7 @@ geo_api_key = "40d1649f-0493-4b70-98ba-98533de7710b"
 search_api_key = 'dda3ddba-c9ea-4ead-9010-f43fbc15c6e3'
 ch = True
 typ = 'map'
+lis = list()
 setts = Set()
 while True:
     for event in pygame.event.get():
