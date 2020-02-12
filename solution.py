@@ -134,7 +134,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
             'text']
         coord1 = list(map(float, point.split()))
         sp.append(coord1)
-        coord = sp[-1]
+        coord = sp[-1][::]
         self.ou = Out(name)
         self.ou.show()
         self.close()
@@ -145,12 +145,15 @@ class Out(QMainWindow, Ui_MainWindow2):
         super().__init__()
         self.setupUi(self)
         self.label.setText(text)
+        self.text = text
         self.checkBox.stateChanged.connect(self.ind)
 
     def ind(self, state):
         if state == QtCore.Qt.Checked:
-            t = self.label.text()
-            self.label.setText(t + find_ind(t))
+            t = self.text
+            self.label.setText(t + ", " + find_ind(t))
+        else:
+            self.label.setText(self.text)
 
 
 pygame.init()
@@ -221,10 +224,10 @@ def find_ind(text):
         sys.exit(2)
 
 
-coord = list(map(float, input().split()))
-z = int(input())
-# coord = [37.948858, 54.180362]
-# z = 7
+# coord = list(map(float, input().split()))
+# z = int(input())
+coord = [37.948858, 54.180362]
+z = 7
 sp = [coord[::]]
 step_y = 181.65 / 2 ** (z - 1)
 step_x = 416.26 / 2 ** (z - 1)
