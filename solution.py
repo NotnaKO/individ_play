@@ -1,13 +1,12 @@
 import os
 import sys
-import random
 import pygame
 import requests
 from PyQt5.QtWidgets import QMainWindow, QApplication
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class Ui_MainWindow(object):
+class UiMainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(571, 493)
@@ -38,6 +37,10 @@ class Ui_MainWindow(object):
         self.pushButton_2 = QtWidgets.QPushButton(self.formLayoutWidget)
         self.pushButton_2.setObjectName("pushButton_2")
         self.formLayout.setWidget(3, QtWidgets.QFormLayout.SpanningRole, self.pushButton_2)
+        self.checkBox = QtWidgets.QCheckBox(self.formLayoutWidget)
+        self.checkBox.setChecked(flag)
+        self.checkBox.setObjectName("checkBox")
+        self.formLayout.setWidget(4, QtWidgets.QFormLayout.SpanningRole, self.checkBox)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 571, 26))
@@ -57,9 +60,10 @@ class Ui_MainWindow(object):
         self.label_2.setText(_translate("MainWindow", "Поиск объекта:"))
         self.pushButton.setText(_translate("MainWindow", "Искать"))
         self.pushButton_2.setText(_translate("MainWindow", "Сброс поискового результата"))
+        self.checkBox.setText(_translate("MainWindow", "Сбрасывать результаты при поиске"))
 
 
-class Ui_MainWindow2(object):
+class UiMainWindow2(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(823, 348)
@@ -90,7 +94,7 @@ class Ui_MainWindow2(object):
         self.checkBox.setText(_translate("MainWindow", "Почтовый индекс"))
 
 
-class MyWidget(QMainWindow, Ui_MainWindow):
+class MyWidget(QMainWindow, UiMainWindow):
     def __init__(self, t):
         super().__init__()
         self.setupUi(self)
@@ -106,7 +110,12 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.comboBox.activated[str].connect(self.choice)
         self.pushButton.clicked.connect(self.search_topo)
         self.pushButton_2.clicked.connect(self.clear)
+        self.checkBox.stateChanged.connect(self.ch)
         self.show()
+
+    def ch(self, state):
+        global flag
+        flag = state
 
     def choice(self, text):
         global typ
@@ -145,7 +154,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.close()
 
 
-class Out(QMainWindow, Ui_MainWindow2):
+class Out(QMainWindow, UiMainWindow2):
     def __init__(self, text):
         global lis
         super().__init__()
@@ -155,6 +164,10 @@ class Out(QMainWindow, Ui_MainWindow2):
         self.ind(False)
 
     def ind(self, state):
+        global sp, lis
+        if flag:
+            sp = [sp[-1][::]]
+            lis = [lis[-1][::]]
         if state == QtCore.Qt.Checked:
             lis2 = []
             for t in lis:
@@ -226,7 +239,10 @@ def check(response):
 
 def draw():
     global map_file, ch, screen
-    map_request = f"http://static-maps.yandex.ru/1.x/?&ll={','.join(map(str, coord))}&pt={','.join(map(str, coord))},pmgrs~{'~'.join(list(map(lambda x: f'{x[0]},{x[1]}', sp)))}&z={z}&l={typ}"
+    if sp:
+        map_request = f"http://static-maps.yandex.ru/1.x/?&ll={','.join(map(str, coord))}&pt={','.join(map(str, coord))},pmgrs~{'~'.join(list(map(lambda x: f'{x[0]},{x[1]}', sp)))}&z={z}&l={typ}"
+    else:
+        map_request = f"http://static-maps.yandex.ru/1.x/?&ll={','.join(map(str, coord))}&pt={','.join(map(str, coord))},pmgrs&z={z}&l={typ}"
     response = requests.get(map_request)
     check(response)
     map_file = "map.png"
@@ -254,6 +270,7 @@ def find_ind(text):
 # z = int(input())
 coord = [37.948858, 54.180362]
 z = 7
+flag = True
 sp = [coord[::]]
 step_y = 181.65 / 2 ** (z - 1)
 step_x = 416.26 / 2 ** (z - 1)
