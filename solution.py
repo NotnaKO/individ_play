@@ -2,8 +2,9 @@ import os
 import sys
 import pygame
 import requests
+import math
 from PyQt5.QtWidgets import QMainWindow, QApplication
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 
 
 class UiMainWindow(object):
@@ -220,6 +221,62 @@ def search_top(c):
     app.exec_()
 
 
+def lonlat_distance(a, b):
+    degree_to_meters_factor = 111 * 1000  # 111 километров в метрах
+    a_lon, a_lat = a
+    b_lon, b_lat = b
+
+    # Берем среднюю по широте точку и считаем коэффициент для нее.
+    radians_lattitude = math.radians((a_lat + b_lat) / 2.)
+    lat_lon_factor = math.cos(radians_lattitude)
+
+    # Вычисляем смещения в метрах по вертикали и горизонтали.
+    dx = abs(a_lon - b_lon) * degree_to_meters_factor * lat_lon_factor
+    dy = abs(a_lat - b_lat) * degree_to_meters_factor
+
+    # Вычисляем расстояние между точками.
+    distance = math.sqrt(dx * dx + dy * dy)
+    return distance
+
+
+def search_org(c):
+    x, y = c
+    xt, yt = coord[0] - (300 - x) * step_x / 600, coord[1] + (225 - y) * step_y / 450
+    geo_params = {'apikey': geo_api_key, 'geocode': f'{xt},{yt}', 'format': 'json'}
+    response = requests.get(geo_api_server, params=geo_params)
+    check(response)
+    json_response = response.json()
+    name = json_response['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']["metaDataProperty"][
+        "GeocoderMetaData"][
+        'text']
+    search_params = {
+        "apikey": search_api_key,
+        "text": name,
+        "lang": "ru_RU",
+        "ll": f'{xt},{yt}',
+        "spn": '0.5,0.5',
+        "type": "biz"
+    }
+    response = requests.get(search_api_server, params=search_params)
+    check(response)
+    json_response = response.json()
+    for i in range(10):
+        try:
+            organization = json_response["features"][i]
+            org_name = organization["properties"]["CompanyMetaData"]["name"]
+            point = organization["geometry"]["coordinates"]
+            if lonlat_distance((xt, yt), point) <= 50:
+                name = org_name
+                sp.append(point)
+                app = QApplication(sys.argv)
+                ou = Out(name)
+                ou.show()
+                app.exec_()
+                break
+        except IndexError:
+            continue
+
+
 def set_map(t):
     global ch
     app = QApplication(sys.argv)
@@ -266,10 +323,10 @@ def find_ind(text):
         return ''
 
 
-# coord = list(map(float, input().split()))
-# z = int(input())
-coord = [37.948858, 54.180362]
-z = 7
+coord = list(map(float, input().split()))
+z = int(input())
+# coord = [37.617240, 54.181171]
+# z = 13
 flag = True
 sp = [coord[::]]
 step_y = 181.65 / 2 ** (z - 1)
@@ -287,7 +344,7 @@ setts = Set()
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            os.remove(map_file)
+            os.remove('map.png')
             sys.exit(0)
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_PAGEDOWN:
@@ -319,6 +376,9 @@ while True:
                     screen = pygame.display.set_mode([600, 450])
             elif event.button == pygame.BUTTON_LEFT:
                 search_top(event.pos)
+                ch = True
+            elif event.button == pygame.BUTTON_RIGHT:
+                search_org(event.pos)
                 ch = True
         if ch:
             draw()
