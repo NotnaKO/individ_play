@@ -105,6 +105,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
         self.comboBox.setCurrentIndex(i)
         self.comboBox.activated[str].connect(self.choice)
         self.pushButton.clicked.connect(self.search_topo)
+        self.pushButton_2.clicked.connect(self.clear)
         self.show()
 
     def choice(self, text):
@@ -121,6 +122,10 @@ class MyWidget(QMainWindow, Ui_MainWindow):
             typ = 'sat,skl'
         self.close()
 
+    def clear(self):
+        global sp
+        sp = list()
+
     def search_topo(self):
         global coord, ch
         text = self.lineEdit.text()
@@ -134,7 +139,7 @@ class MyWidget(QMainWindow, Ui_MainWindow):
             'text']
         coord1 = list(map(float, point.split()))
         sp.append(coord1)
-        coord = sp[-1][::]
+        coord = coord1[::]
         self.ou = Out(name)
         self.ou.show()
         self.close()
@@ -153,7 +158,7 @@ class Out(QMainWindow, Ui_MainWindow2):
         if state == QtCore.Qt.Checked:
             lis2 = []
             for t in lis:
-                lis2.append(t + ", " + find_ind(t))
+                lis2.append(t + find_ind(t))
             s = '\n'.join(lis2)
         else:
             s = '\n'.join(lis)
@@ -185,6 +190,23 @@ class Set(pygame.sprite.Sprite):
         self.rect.x = 600 - self.rect.w
 
 
+def search_top(c):
+    x, y = c
+    xt, yt = coord[0] - (300 - x) * step_x / 600, coord[1] + (225 - y) * step_y / 450
+    sp.append([xt, yt])
+    geo_params = {'apikey': geo_api_key, 'geocode': f'{xt},{yt}', 'format': 'json'}
+    response = requests.get(geo_api_server, params=geo_params)
+    check(response)
+    json_response = response.json()
+    name = json_response['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']["metaDataProperty"][
+        "GeocoderMetaData"][
+        'text']
+    app = QApplication(sys.argv)
+    ou = Out(name)
+    ou.show()
+    app.exec_()
+
+
 def set_map(t):
     global ch
     app = QApplication(sys.argv)
@@ -204,7 +226,7 @@ def check(response):
 
 def draw():
     global map_file, ch, screen
-    map_request = f"http://static-maps.yandex.ru/1.x/?&pt={','.join(map(str, coord))},pmgrs~{'~'.join(list(map(lambda x: f'{x[0]},{x[1]}', sp)))}&z={z}&l={typ}"
+    map_request = f"http://static-maps.yandex.ru/1.x/?&ll={','.join(map(str, coord))}&pt={','.join(map(str, coord))},pmgrs~{'~'.join(list(map(lambda x: f'{x[0]},{x[1]}', sp)))}&z={z}&l={typ}"
     response = requests.get(map_request)
     check(response)
     map_file = "map.png"
@@ -222,10 +244,10 @@ def find_ind(text):
     toponim = json_response['response']['GeoObjectCollection']['featureMember'][0]
     try:
         spi = toponim["GeoObject"]["metaDataProperty"]["GeocoderMetaData"]["Address"]["postal_code"]
-        return spi
+        return f', {spi}'
     except KeyError:
         print('Ошибка объекта! Проверьте адрес!')
-        sys.exit(2)
+        return ''
 
 
 # coord = list(map(float, input().split()))
@@ -278,6 +300,9 @@ while True:
                 if setts.rect.y <= event.pos[1] <= setts.rect.y + setts.rect.h:
                     set_map(typ)
                     screen = pygame.display.set_mode([600, 450])
+            elif event.button == pygame.BUTTON_LEFT:
+                search_top(event.pos)
+                ch = True
         if ch:
             draw()
             all_sprites.draw(screen)
